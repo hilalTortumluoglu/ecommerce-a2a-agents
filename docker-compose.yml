@@ -1,0 +1,159 @@
+version: "3.9"
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # MCP Server — E-Commerce Tools & Data Layer
+  # ─────────────────────────────────────────────────────────────────────────
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: mcp_server
+    image: ecommerce-a2a/mcp-server:latest
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - MCP_SERVER_HOST=0.0.0.0
+      - MCP_SERVER_PORT=8090
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Product Agent — A2A Server on :8006
+  # ─────────────────────────────────────────────────────────────────────────
+  product-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: agent
+    image: ecommerce-a2a/product-agent:latest
+    restart: unless-stopped
+    ports:
+      - "8006:8006"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - MCP_SERVER_URL=http://mcp-server:8090
+      - PRODUCT_AGENT_PORT=8006
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini-2024-07-18}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    command: ["python", "-m", "agents.product_agent.server"]
+    depends_on:
+      mcp-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8006/.well-known/agent.json"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Order Agent — A2A Server on :8005
+  # ─────────────────────────────────────────────────────────────────────────
+  order-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: agent
+    image: ecommerce-a2a/order-agent:latest
+    restart: unless-stopped
+    ports:
+      - "8005:8005"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - MCP_SERVER_URL=http://mcp-server:8090
+      - ORDER_AGENT_PORT=8005
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini-2024-07-18}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    command: ["python", "-m", "agents.order_agent.server"]
+    depends_on:
+      mcp-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/.well-known/agent.json"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Search Agent — A2A Server on :8004
+  # ─────────────────────────────────────────────────────────────────────────
+  search-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: agent
+    image: ecommerce-a2a/search-agent:latest
+    restart: unless-stopped
+    ports:
+      - "8004:8004"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - MCP_SERVER_URL=http://mcp-server:8090
+      - SEARCH_AGENT_PORT=8004
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini-2024-07-18}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    command: ["python", "-m", "agents.search_agent.server"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/.well-known/agent.json"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Orchestrator — Main Entry Point on :8000
+  # ─────────────────────────────────────────────────────────────────────────
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: agent
+    image: ecommerce-a2a/orchestrator:latest
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - MCP_SERVER_URL=http://mcp-server:8090
+      - PRODUCT_AGENT_URL=http://product-agent:8006
+      - ORDER_AGENT_URL=http://order-agent:8005
+      - SEARCH_AGENT_URL=http://search-agent:8004
+      - ORCHESTRATOR_PORT=8000
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini-2024-07-18}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    command: ["python", "-m", "agents.orchestrator.server"]
+    depends_on:
+      product-agent:
+        condition: service_healthy
+      order-agent:
+        condition: service_healthy
+      search-agent:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  app_data:
