@@ -515,7 +515,7 @@ def get_orders_by_customer(customer_id: str) -> list[Order]:
 
 
 def get_orders_by_email(email: str) -> list[Order]:
-    return [o for o in ORDERS if o.customer_email == email]
+    return [o for o in ORDERS if o.customer_email.lower() == email.lower()]
 
 
 def get_customer_by_id(customer_id: str) -> Customer | None:
@@ -523,7 +523,16 @@ def get_customer_by_id(customer_id: str) -> Customer | None:
 
 
 def get_customer_by_email(email: str) -> Customer | None:
-    return next((c for c in CUSTOMERS if c.email == email), None)
+    return next((c for c in CUSTOMERS if c.email.lower() == email.lower()), None)
+
+
+def search_customers(query: str) -> list[Customer]:
+    """Search customers by name or email (case-insensitive)."""
+    q = query.lower()
+    return [
+        c for c in CUSTOMERS
+        if q in c.full_name.lower() or q in c.email.lower()
+    ]
 
 
 def save_mock_data_to_json(output_dir: str = "./data") -> None:

@@ -47,6 +47,9 @@ services:
       - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini-2024-07-18}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - ENVIRONMENT=${ENVIRONMENT:-production}
+      - LANGCHAIN_TRACING_V2=true
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-ecommerce-a2a-agents}
     command: ["python", "-m", "agents.product_agent.server"]
     depends_on:
       mcp-server:
@@ -78,6 +81,9 @@ services:
       - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini-2024-07-18}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - ENVIRONMENT=${ENVIRONMENT:-production}
+      - LANGCHAIN_TRACING_V2=true
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-ecommerce-a2a-agents}
     command: ["python", "-m", "agents.order_agent.server"]
     depends_on:
       mcp-server:
@@ -109,6 +115,9 @@ services:
       - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini-2024-07-18}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - ENVIRONMENT=${ENVIRONMENT:-production}
+      - LANGCHAIN_TRACING_V2=true
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-ecommerce-a2a-agents}
     command: ["python", "-m", "agents.search_agent.server"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8004/.well-known/agent.json"]
@@ -140,6 +149,9 @@ services:
       - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini-2024-07-18}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - ENVIRONMENT=${ENVIRONMENT:-production}
+      - LANGCHAIN_TRACING_V2=true
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-ecommerce-a2a-agents}
     command: ["python", "-m", "agents.orchestrator.server"]
     depends_on:
       product-agent:

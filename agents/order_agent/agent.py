@@ -154,6 +154,12 @@ async def get_customer_profile(email: str) -> str:
 
 
 @tool
+async def search_customers(query: str) -> str:
+    """Müşterileri isim veya e-posta adresi ile ara. Müşteri ID'sini veya tam e-postasını bulmak için kullan."""
+    return await _call_mcp_tool("search_customers", {"query": query})
+
+
+@tool
 async def web_search_shipping(query: str) -> str:
     """Kargo firmaları, teslimat süreleri veya iade politikaları hakkında web'de ara."""
     if not settings.tavily_api_key:
@@ -202,6 +208,7 @@ def build_order_agent() -> Any:
         get_customer_orders,
         cancel_order,
         get_customer_profile,
+        search_customers,
         web_search_shipping,
     ]
 

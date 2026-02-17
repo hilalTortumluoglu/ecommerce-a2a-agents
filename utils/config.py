@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     environment: str = Field(default="development")
     api_secret_key: str = Field(default="change-me-in-production-32-chars!!")
 
+    # ── LangChain ─────────────────────────────────────────────────────────────
+    langchain_tracing_v2: bool = Field(default=True)
+    langchain_api_key: str = Field(default="")
+    langchain_project: str = Field(default="ecommerce-a2a")
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

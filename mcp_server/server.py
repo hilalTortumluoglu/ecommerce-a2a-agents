@@ -249,6 +249,17 @@ async def list_tools() -> list[Tool]:
                 "required": ["order_id"],
             },
         ),
+        Tool(
+            name="search_customers",
+            description="Search for customers by name or email keyword",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Name or email to search for"},
+                },
+                "required": ["query"],
+            },
+        ),
     ]
 
 
@@ -403,6 +414,24 @@ async def _dispatch_tool(name: str, args: dict[str, Any]) -> Any:  # noqa: PLR09
             "refund_amount": order.total,
         }
 
+    elif name == "search_customers":
+        query = args.get("query", "")
+        from data.mock_data import search_customers
+        results = search_customers(query)
+        return {
+            "customers": [
+                {
+                    "id": c.id,
+                    "email": c.email,
+                    "full_name": c.full_name,
+                    "total_orders": c.total_orders,
+                }
+                for c in results
+            ],
+            "total": len(results),
+            "query": query,
+        }
+
     else:
         return {"error": f"Unknown tool: {name}"}
 
@@ -431,6 +460,24 @@ async def health_check(request: Request) -> JSONResponse:
     return JSONResponse({"status": "healthy", "service": "ecommerce-mcp-server", "tools": 9})
 
 
+async def handle_tool_call(request: Request) -> JSONResponse:
+    """Direct HTTP endpoint for tool calling (compatibility with existing agents)."""
+    try:
+        body = await request.json()
+        name = body.get("name")
+        arguments = body.get("arguments", {})
+
+        if not name:
+            return JSONResponse({"error": "Tool name is required"}, status_code=400)
+
+        logger.info("direct_tool_call_received", tool=name, args=arguments)
+        result = await _dispatch_tool(name, arguments)
+        return JSONResponse(result)
+    except Exception as e:
+        logger.error("direct_tool_call_error", error=str(e))
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 def build_starlette_app() -> Starlette:
     sse = SseServerTransport("/messages/")
 
@@ -445,6 +492,7 @@ def build_starlette_app() -> Starlette:
         routes=[
             Route("/health", endpoint=health_check),
             Route("/sse", endpoint=handle_sse),
+            Route("/tool", endpoint=handle_tool_call, methods=["POST"]),
             Mount("/messages/", app=sse.handle_post_message),
         ],
     )

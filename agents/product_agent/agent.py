@@ -151,6 +151,12 @@ async def get_recommendations(
 
 
 @tool
+async def search_customers(query: str) -> str:
+    """Müşterileri isim veya e-posta adresi ile ara."""
+    return await _call_mcp_tool("search_customers", {"query": query})
+
+
+@tool
 async def web_search_products(query: str) -> str:
     """Search the web for product reviews, comparisons, or current market prices using Tavily."""
     if not settings.tavily_api_key:
@@ -209,6 +215,7 @@ def build_product_agent() -> Any:
         get_product_details,
         check_product_availability,
         get_recommendations,
+        search_customers,
         web_search_products,
     ]
 

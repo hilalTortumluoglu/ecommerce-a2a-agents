@@ -95,7 +95,7 @@ async def _delegate_to_agent(agent_url: str, query: str, agent_name: str) -> str
         )
 
 
-
+@tool
 async def ask_product_agent(query: str) -> str:
     """
     Ürün kataloğu, ürün arama, özellik karşılaştırma, stok durumu veya
@@ -108,7 +108,7 @@ async def ask_product_agent(query: str) -> str:
     return result
 
 
-
+@tool
 async def ask_order_agent(query: str) -> str:
     """
     Sipariş takibi, kargo durumu, sipariş iptali, iade işlemleri veya
@@ -121,7 +121,7 @@ async def ask_order_agent(query: str) -> str:
     return result
 
 
-
+@tool
 async def ask_search_agent(query: str) -> str:
     """
     Web araması, güncel fiyat karşılaştırması, ürün incelemeleri veya

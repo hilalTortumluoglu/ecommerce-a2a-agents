@@ -6,42 +6,39 @@
 [![LangGraph](https://img.shields.io/badge/LangGraph-0.2.60+-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
+## 📖 Makale ve Sunum
+Bu projenin arkasındaki vizyonu, A2A ve MCP protokollerinin nasıl kullanıldığını anlatan Medium makalesini buradan okuyabilirsiniz:
+👉 **[E-Ticaretin Geleceği: Multi-Agent AI Sistemleri ve MCP](https://medium.com/@hilal.tortumluoglu/otonom-e-ticaret-ekosistemleri-a2a-protokolu-ve-%C3%A7oklu-ajan-entegrasyonu-teknik-rehberi-106d942eb968)**
+
+
 >  E-ticaret müşterileri tek bir konuşmada birden fazla sorun yaşar — "Bu ürün uygun mu?", "Siparişim nerede?", "Başka yerde daha ucuz mu?". Bunları ayrı ayrı yönetmek yerine bu sistem, **akıllı bir orkestratör** aracılığıyla her soruyu doğru uzman ajana yönlendirerek tek bir seamless deneyim sunar.
 
 ## 📐 Mimari
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         Kullanıcı / İstemci                             │
-│            REST API (/api/chat) veya A2A Protocol (port 8000)           │
-└────────────────────────────────┬────────────────────────────────────────┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │    ORCHESTRATOR AGENT    │
-                    │      Port: 8000          │
-                    │   LangGraph ReAct Loop   │
-                    │   A2A Client (delegator) │
-                    └────────┬───┬──────┬──────┘
-                             │   │      │
-               A2A Protocol  │   │      │  A2A Protocol
-          ┌──────────────────┘   │      └─────────────────┐
-          │                      │                         │
-┌─────────▼──────────┐  ┌────────▼──────────┐  ┌──────────▼────────────┐
-│   PRODUCT AGENT     │  │   ORDER AGENT     │  │   SEARCH AGENT        │
-│   Port: 8006        │  │   Port: 8005       │  │   Port: 8004          │
-│   LangGraph + MCP   │  │   LangGraph + MCP  │  │   LangGraph + Tavily  │
-│   Ürün Arama        │  │   Sipariş Takibi   │  │   Web Araması         │
-│   Öneri Sistemi     │  │   Sipariş İptali   │  │   Fiyat Karşılaştırma │
-└────────┬────────────┘  └─────────┬──────────┘  └───────────────────────┘
-         │                         │
-         └────────────┬────────────┘
-                      │  MCP Protocol
-             ┌────────▼────────────┐
-             │    MCP SERVER       │
-             │    Port: 8090       │
-             │  E-Commerce Tools   │
-             │  Mock Data Layer    │
-             └─────────────────────┘
+```mermaid
+graph TD
+    User((Kullanıcı / İstemci)) -- "REST / A2A (Port 8000)" --> Orchestrator[Orchestrator Agent]
+    
+    subgraph "Uzman Ajanlar (A2A Protocol)"
+        Orchestrator -- "Delegates" --> Product[Product Agent]
+        Orchestrator -- "Delegates" --> Order[Order Agent]
+        Orchestrator -- "Delegates" --> Search[Search Agent]
+    end
+    
+    subgraph "Arama Yetenekleri"
+        Product -- "Tavily Search" --> Web1((Web))
+        Search -- "Tavily Search" --> Web2((Web))
+        Order -- "Tavily Search" --> Web3((Web))
+    end
+    
+    subgraph "Veri Katmanı (MCP Protocol)"
+        Product -- "Tools/Resources" --> MCP[MCP SERVER]
+        Order -- "Tools/Resources" --> MCP
+        MCP -- "Structured Data" --> DB[(Mock Data Layer)]
+    end
+
+    style Orchestrator fill:#f9f,stroke:#333,stroke-width:4px
+    style MCP fill:#bbf,stroke:#333,stroke-width:4px
 ```
 
 ### Teknoloji Stack
@@ -86,7 +83,10 @@
 - 🔍 A2A Agent Card discovery
 
 ### MCP Server (Port 8090)
-- 📚 9 e-ticaret aracı
+- 📚 10 e-ticaret aracı
+  - `search_products`, `get_product_details`, `get_products_by_category`, `check_product_availability`
+  - `get_order_status`, `get_customer_orders`, `get_customer_profile`, `cancel_order`
+  - `get_recommendations`, `search_customers` (Yeni!)
 - 🛍️ 10 mock ürün (gerçekçi Türkçe verilerle)
 - 📦 4 mock sipariş
 - 👥 3 mock müşteri
@@ -170,6 +170,11 @@ curl -X POST http://localhost:8000/api/chat \
 curl -X POST http://localhost:8000/api/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "ord-003 siparişimi iptal etmek istiyorum", "session_id": "user-123"}'
+
+# İsim bazlı akıllı sorgu (A2A + MCP Search)
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Zeynep Kaya son siparişim ne durumda?", "session_id": "user-123"}'
 ```
 
 ### A2A Protocol (Python Client)
