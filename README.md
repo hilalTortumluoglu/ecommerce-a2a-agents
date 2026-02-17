@@ -8,7 +8,7 @@
 
 ## 📖 Makale ve Sunum
 Bu projenin arkasındaki vizyonu, A2A ve MCP protokollerinin nasıl kullanıldığını anlatan Medium makalesini buradan okuyabilirsiniz:
-👉 **[E-Ticaretin Geleceği: Multi-Agent AI Sistemleri ve MCP](https://medium.com/@hilal.tortumluoglu/otonom-e-ticaret-ekosistemleri-a2a-protokolu-ve-%C3%A7oklu-ajan-entegrasyonu-teknik-rehberi-106d942eb968)**
+👉 **[E-Ticaretin Geleceği: Multi-Agent AI Sistemleri ve MCP](https://medium.com/@hilal.tortumluoglu/e-ticaret-ajanlar%C4%B1nda-a2a-protokol%C3%BC-teknik-mimari-implementasyon-ve-vaka-analizi-106d942eb968)**
 
 
 >  E-ticaret müşterileri tek bir konuşmada birden fazla sorun yaşar — "Bu ürün uygun mu?", "Siparişim nerede?", "Başka yerde daha ucuz mu?". Bunları ayrı ayrı yönetmek yerine bu sistem, **akıllı bir orkestratör** aracılığıyla her soruyu doğru uzman ajana yönlendirerek tek bir seamless deneyim sunar.
@@ -118,7 +118,11 @@ cp .env.example .env
 ```env
 OPENAI_API_KEY=sk-ant-your-key-here
 TAVILY_API_KEY=tvly-your-key-here   # Opsiyonel
-LLM_MODEL=gpt-4o-mini-2024-07-18
+LLM_MODEL=gpt-4o-mini-2024-07-184
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=lsv2_your-key-here
+LANGCHAIN_PROJECT=project-name
+
 ```
 
 ### 3. Docker ile Başlat
@@ -273,24 +277,25 @@ ecommerce-a2a-agents/
 
 ## 🏗️ A2A Protocol Akışı
 
-```
-Kullanıcı → Orchestrator (A2A Server)
-                │
-                ▼ (LangGraph intent routing)
-                │
-         ┌──────┴──────┐
-         │ Tool: ask_product_agent()  ◄─── "Kulaklık öner"
-         │ Tool: ask_order_agent()    ◄─── "Siparişim nerede?"
-         │ Tool: ask_search_agent()   ◄─── "Fiyat karşılaştır"
-         └──────┬──────┘
-                │
-                ▼ A2AClient.send_message()
-                │
-         Uzman Agent (A2A Server)
-                │
-                ▼ (LangGraph ReAct + MCP/Tavily tools)
-                │
-         Yanıt → Orchestrator → Kullanıcı
+```mermaid
+sequenceDiagram
+    participant U as Kullanıcı
+    participant O as Orchestrator (A2A Server)
+    participant A as Uzman Agent (A2A Server)
+    participant M as MCP / Tavily
+
+    U->>O: "Kulaklık önerisi yap" (POST /api/chat)
+    Note over O: LangGraph Intent Routing
+    O->>O: Tool Call: ask_product_agent()
+    
+    O->>A: A2A Message (POST /)
+    Note over A: LangGraph ReAct Loop
+    A->>M: MCP Tool Call / Web Search
+    M-->>A: Ham Veri / Arama Sonucu
+    
+    A-->>O: A2A Response (Final Answer)
+    Note over O: State Update & Synthesis
+    O-->>U: "İşte önerilerim..." (API Response)
 ```
 
 Her agent:
