@@ -1,6 +1,6 @@
 # 🛒 E-Commerce AI Multi-Agent System
 
-[![CI](https://github.com/yourusername/ecommerce-a2a-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/ecommerce-a2a-agents/actions)
+[![CI](https://github.com/hilalTortumluoglu/ecommerce-a2a-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/hilalTortumluoglu/ecommerce-a2a-agents/actions)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
 [![A2A SDK](https://img.shields.io/badge/A2A_SDK-0.3.22+-green.svg)](https://github.com/a2aproject/a2a-python)
 [![LangGraph](https://img.shields.io/badge/LangGraph-0.2.60+-orange.svg)](https://github.com/langchain-ai/langgraph)
